@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق يا برين - تحدي الذاكرة</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Tajawal) -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <!-- Tone.js for Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Canvas Confetti for celebrations -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Tajawal', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0a051b',
+                            card: '#120c2b',
+                            primary: '#6366f1',
+                            accent: '#f59e0b',
+                            danger: '#ef4444',
+                            success: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background: radial-gradient(circle at top, #18113c 0%, #05020c 100%);
+            overscroll-behavior: none;
+            overflow-x: hidden;
+        }
+        .pulsing-glow {
+            animation: pulseGlow 2s infinite alternate;
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+            100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.8); }
+        }
+        .flip-card-inner {
+            transition: transform 0.4s;
+            transform-style: preserve-3d;
+        }
+        .flip-card-active {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            backface-visibility: hidden;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+        /* Custom scrollbar to keep layout clean */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(10, 5, 27, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex items-center justify-center p-2 sm:p-4">
+
+    <!-- حاوية اللعبة الرئيسية ذات الحجم الثابت والمنسق دون شكل المحاكي القديم -->
+    <div class="w-full max-w-md bg-[#0c0722]/95 rounded-[2.5rem] border border-indigo-500/20 shadow-[0_0_50px_rgba(99,102,241,0.15)] relative overflow-hidden flex flex-col p-4 sm:p-5 min-h-[580px]">
+        
+        <!-- الترويسة العلوية المدمجة والذكية -->
+        <div class="px-2 pb-3 mb-1 border-b border-indigo-950/60 flex justify-between items-center text-xs text-slate-400 select-none shrink-0 z-50">
+            <div class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 pulsing-glow"></span>
+                <span class="font-bold tracking-wider text-indigo-300">يا برين ⚡</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span id="connection-badge" class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold">محاكاة محلية</span>
+            </div>
+        </div>
+
+        <!-- نظام التنبيهات المنبثقة العلوي -->
+        <div id="toast-notification" class="absolute top-4 left-4 right-4 bg-indigo-900/95 border border-indigo-500 text-slate-100 px-4 py-3 rounded-2xl shadow-xl flex items-center gap-3 z-50 transform -translate-y-32 transition-transform duration-300">
+            <div class="p-1.5 bg-indigo-600 rounded-lg text-white shrink-0">
+                <i id="toast-icon" class="fas fa-bell text-xs"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p id="toast-text" class="text-xs font-semibold leading-relaxed truncate"></p>
+            </div>
+            <button onclick="hideToast()" class="text-slate-400 hover:text-white shrink-0">
+                <i class="fas fa-times text-xs"></i>
+            </button>
+        </div>
+
+        <!-- مودال التحقق المالي التفاعلي للبريد الإلكتروني -->
+        <div id="verification-modal" class="absolute inset-0 bg-black/95 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-[#110b2a] border border-indigo-500/40 w-full max-w-xs rounded-2xl p-5 text-right animate__animated animate__bounceIn">
+                <div class="text-center mb-3">
+                    <div class="w-12 h-12 bg-indigo-950 rounded-full flex items-center justify-center mx-auto mb-2 border border-indigo-500">
+                        <i class="fas fa-envelope-open-text text-indigo-400 text-xl animate-pulse"></i>
+                    </div>
+                    <h3 class="text-sm font-black text-indigo-300">تفعيل حسابك بالبريد</h3>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-relaxed mb-3 text-center">
+                    تم إرسال رابط التفعيل إلى: <br><strong id="verification-target-email" class="text-amber-400 font-mono"></strong>.<br>
+                    يرجى النقر على تفعيل أدناه لتأكيد الهوية بنجاح.
+                </p>
+                <div class="bg-slate-950/80 p-2.5 rounded-lg border border-slate-900 text-[10px] text-slate-400 mb-4 leading-relaxed">
+                    <span class="text-amber-500 font-bold block mb-0.5">💡 في طور المحاكاة:</span>
+                    يمكنك تأكيد التفعيل مباشرة لتخطي هذه الخطوة والاستمرار.
+                </div>
+                <div class="space-y-2">
+                    <button id="verify-now-btn" onclick="confirmMockVerification()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all">
+                        تأكيد التفعيل والبدء ✅
+                    </button>
+                    <button onclick="closeVerificationModal()" class="w-full py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold transition-all">
+                        إلغاء
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- إعدادات سيرفر الاتصال وقواعد Firebase -->
+        <div id="settings-modal" class="absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-[#110b2a] border border-indigo-500/30 w-full max-w-xs rounded-2xl p-4 text-right animate__animated animate__zoomIn animate__faster">
+                <div class="flex justify-between items-center border-b border-indigo-950 pb-2 mb-3">
+                    <h3 class="text-xs font-black text-indigo-300"><i class="fas fa-cog ml-1 text-indigo-400"></i>إعدادات خادم اللعب</h3>
+                    <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times text-sm"></i></button>
+                </div>
+                <p class="text-[10px] text-slate-400 leading-relaxed mb-3">
+                    لتتمكن من اللعب الفعلي مع أصدقائك عبر أجهزة مختلفة، أدخل بيانات مشروع Firebase Firestore هنا:
+                </p>
+                <div class="space-y-2 text-xs">
+                    <div>
+                        <label class="block text-slate-300 mb-0.5 text-[10px] font-bold">Firebase Config JSON:</label>
+                        <textarea id="db-config-json" rows="4" placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "storageBucket": "...", "messagingSenderId": "...", "appId": "..."}' class="w-full bg-slate-950 border border-indigo-950 rounded-lg p-2 font-mono text-[9px] focus:outline-none focus:border-indigo-500 text-indigo-300 tracking-wider"></textarea>
+                    </div>
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <button onclick="resetToMockDB()" class="text-[9px] text-rose-400 hover:underline"><i class="fas fa-trash-alt ml-1"></i>العودة للمحاكاة</button>
+                    <button onclick="saveCustomDBConfig()" class="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[10px] font-bold transition-all"><i class="fas fa-save ml-1"></i>حفظ وتشغيل</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال توجيهات الدعوة والمشاركة الفعالة -->
+        <div id="invite-detail-modal" class="absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-[#110b2a] border border-indigo-500/40 w-full max-w-xs rounded-2xl p-4 text-right animate__animated animate__zoomIn animate__faster">
+                <div class="text-center mb-3">
+                    <div class="w-10 h-10 bg-indigo-950 rounded-full flex items-center justify-center mx-auto mb-2 border border-indigo-500/30">
+                        <i class="fas fa-paper-plane text-indigo-400 text-base"></i>
+                    </div>
+                    <h3 class="text-xs font-black text-indigo-300">كيف تدعو أصدقائك بنجاح؟</h3>
+                </div>
+                <div class="space-y-2 text-[10px] leading-relaxed text-slate-300">
+                    <div class="bg-indigo-950/40 p-2 rounded-lg border border-indigo-500/10">
+                        <span class="text-amber-400 font-bold block mb-0.5">⚠️ تنبيه البيئة التجريبية:</span>
+                        روابط الويب المنسوخة من نافذة المتصفح الحالية قد تكون خاصة بجلسة حسابك فقط.
+                    </div>
+                    <div class="space-y-1">
+                        <span class="font-bold text-slate-200">💡 طرق التجربة الناجحة:</span>
+                        <p class="pr-1">• **نفس الجهاز (أسهل):** افتح متصفحاً خفياً وصق الرابط لتلعب ضد نفسك!</p>
+                        <p class="pr-1">• **اللعب الفردي مع البوتات:** اضغط على زر "إضافة بوت 🤖" لتجربة التحديات مباشرة!</p>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-1.5">
+                    <button onclick="copyInviteLinkOnly()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1">
+                        <i class="fas fa-link text-[10px]"></i> نسخ رابط الدعوة
+                    </button>
+                    <button onclick="closeInviteDetailModal()" class="w-full py-1.5 bg-slate-800 text-slate-300 rounded-lg text-xs font-bold transition-all text-center">
+                        حسناً، فهمت
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- مودال التنبيهات العامة والرسائل التحذيرية -->
+        <div id="custom-modal" class="absolute inset-0 bg-black/85 flex items-center justify-center p-4 z-50 hidden">
+            <div class="bg-[#110b2a] border border-indigo-500/30 w-full max-w-xs rounded-2xl p-5 text-center animate__animated animate__zoomIn animate__faster">
+                <div id="modal-icon-container" class="w-12 h-12 bg-indigo-950 rounded-full flex items-center justify-center mx-auto mb-3 border border-indigo-500">
+                    <i id="modal-icon" class="fas fa-info text-xl text-indigo-400"></i>
+                </div>
+                <h3 id="modal-title" class="text-sm font-black mb-1.5 text-indigo-300">تنبيه</h3>
+                <p id="modal-desc" class="text-slate-300 text-xs mb-4 leading-relaxed"></p>
+                <div class="flex gap-2 justify-center">
+                    <button id="modal-cancel-btn" onclick="closeModal()" class="hidden px-4 py-1.5 bg-slate-800 text-slate-200 rounded-lg text-xs transition-all">إلغاء</button>
+                    <button id="modal-confirm-btn" onclick="closeModal()" class="px-5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs transition-all font-bold">حسناً</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة تسجيل الدخول والترحيب باللاعبين -->
+        <div id="screen-auth" class="flex-1 flex flex-col justify-between p-3 sm:p-5">
+            <div class="text-center pt-1 relative">
+                <button onclick="openSettingsModal()" class="absolute right-0 top-0 w-8 h-8 rounded-full bg-[#110b2a] border border-indigo-950 text-slate-300 hover:text-white flex items-center justify-center transition-all shadow">
+                    <i class="fas fa-cog text-sm"></i>
+                </button>
+
+                <div class="w-14 h-14 bg-gradient-to-tr from-indigo-600 to-amber-500 rounded-2xl mx-auto flex items-center justify-center shadow-lg pulsing-glow animate__animated animate__pulse animate__infinite mt-2">
+                    <i class="fas fa-brain text-2xl text-white"></i>
+                </div>
+                <h1 class="text-2xl font-black tracking-wider mt-2 bg-gradient-to-r from-indigo-400 via-purple-300 to-amber-400 bg-clip-text text-transparent">يا بْريْن!</h1>
+                <p class="text-slate-400 text-xs mt-0.5 font-bold">التركيز دبل، والتحدي يجمعنا! 🧠⚡</p>
+                
+                <div id="auth-invite-notice" class="hidden mt-3 bg-indigo-950/80 border border-indigo-500/40 rounded-xl p-2 text-[10px] text-amber-300">
+                    <i class="fas fa-envelope-open-text ml-1 animate-bounce"></i> سيتم ضمك تلقائياً للغرفة بعد إدخال الاسم والقبول!
+                </div>
+            </div>
+
+            <div class="bg-indigo-950/20 border border-indigo-500/10 rounded-2xl p-4 space-y-3 my-2">
+                <div class="flex border-b border-indigo-900/40 pb-1.5">
+                    <button onclick="switchAuthTab('guest')" id="tab-auth-guest" class="flex-1 py-1 text-center text-xs font-bold border-b-2 border-indigo-500 text-indigo-400 transition-all">دخول سريع</button>
+                    <button onclick="switchAuthTab('login')" id="tab-auth-login" class="flex-1 py-1 text-center text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all">بالحساب</button>
+                    <button onclick="switchAuthTab('register')" id="tab-auth-register" class="flex-1 py-1 text-center text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all">حساب جديد</button>
+                </div>
+
+                <div class="space-y-2.5" id="auth-forms-container">
+                    <div id="auth-field-username">
+                        <label class="block text-[10px] text-slate-400 mb-0.5">الاسم المستعار</label>
+                        <div class="relative">
+                            <input id="auth-input-username" type="text" placeholder="مثال: دكتور برين" class="w-full bg-slate-900/60 border border-indigo-950 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 text-slate-100 pr-8 text-right" dir="rtl">
+                            <i class="fas fa-user absolute left-2.5 top-2.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+
+                    <div id="auth-field-email" class="hidden">
+                        <label class="block text-[10px] text-slate-400 mb-0.5">البريد الإلكتروني</label>
+                        <div class="relative">
+                            <input id="auth-input-email" type="email" placeholder="name@example.com" class="w-full bg-slate-900/60 border border-indigo-950 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 text-slate-100 pr-8 text-left" dir="ltr">
+                            <i class="fas fa-envelope absolute left-2.5 top-2.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+
+                    <div id="auth-field-password" class="hidden">
+                        <label class="block text-[10px] text-slate-400 mb-0.5">كلمة المرور</label>
+                        <div class="relative">
+                            <input id="auth-input-password" type="password" placeholder="••••••••" class="w-full bg-slate-900/60 border border-indigo-950 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-500 text-slate-100 pr-8 text-left" dir="ltr">
+                            <i class="fas fa-lock absolute left-2.5 top-2.5 text-slate-500 text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="auth-action-btn" onclick="submitAuthAction()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-1">
+                    <i class="fas fa-rocket"></i> <span id="auth-action-text">دخول سريع كضيف</span>
+                </button>
+            </div>
+
+            <p class="text-center text-[9px] text-slate-500 leading-relaxed px-2 pb-1">
+                تحدي الذاكرة الأقوى لتنمية القدرات الذهنية الفولاذية! 🧠🇸🇦
+            </p>
+        </div>
+
+        <!-- شاشة لوحة التحكم وقائمة الخيارات الرئيسية للقيم -->
+        <div id="screen-dashboard" class="flex-1 flex flex-col hidden overflow-hidden">
+            <!-- الملف الشخصي المصغر -->
+            <div class="px-3 py-2 bg-slate-950/40 border-b border-indigo-950/40 flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs shrink-0" id="user-avatar-lbl">
+                        ي
+                    </div>
+                    <div class="min-w-0 text-right">
+                        <h4 id="user-display-name" class="font-bold text-xs text-slate-100 truncate">بطل مجهول</h4>
+                        <p class="text-[9px] text-amber-400 font-semibold truncate" id="user-badge-level"><i class="fas fa-medal"></i> مبتدئ برين</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="openSettingsModal()" class="p-1.5 text-slate-400 hover:text-white text-xs"><i class="fas fa-cog"></i></button>
+                    <button onclick="logout()" class="p-1.5 text-slate-400 hover:text-rose-400 text-xs"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+
+            <!-- محتوى لوحة القيادة -->
+            <div class="flex-1 overflow-y-auto p-3 space-y-3">
+                <!-- إنشاء قيم وتحديد السعة التفاعلية -->
+                <div class="bg-gradient-to-br from-indigo-950/40 to-purple-950/40 border border-indigo-500/20 rounded-2xl p-3 shadow-xl space-y-2">
+                    <div class="text-center">
+                        <h3 class="font-black text-xs text-amber-300">تحدي الذاكرة الجماعي</h3>
+                        <p class="text-[9px] text-slate-300">حدد عدد اللاعبين لإنشاء القيم الجديد فوراً</p>
+                    </div>
+
+                    <!-- شريط التحكم بالسعة واختيار من 2 إلى 8 لاعبين -->
+                    <div class="space-y-1.5 bg-slate-950/40 p-2 rounded-xl border border-indigo-500/10">
+                        <label class="block text-[9px] text-indigo-300 text-center font-bold">
+                            <i class="fas fa-users-cog ml-1"></i> حدد عدد اللاعبين الأقصى:
+                        </label>
+                        <div class="flex justify-center items-center gap-1" id="player-count-selector">
+                            <button type="button" onclick="setPlayerCount(2)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300" data-value="2">2</button>
+                            <button type="button" onclick="setPlayerCount(3)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300" data-value="3">3</button>
+                            <button type="button" onclick="setPlayerCount(4)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-indigo-600 border-indigo-400 text-white shadow-md scale-110" data-value="4">4</button>
+                            <button type="button" onclick="setPlayerCount(5)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300" data-value="5">5</button>
+                            <button type="button" onclick="setPlayerCount(6)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300" data-value="6">6</button>
+                            <button type="button" onclick="setPlayerCount(7)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300" data-value="7">7</button>
+                            <button type="button" onclick="setPlayerCount(8)" class="player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300" data-value="8">8</button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col gap-1.5 pt-1">
+                        <button onclick="createRoom()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-extrabold py-2 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 text-xs">
+                            <i class="fas fa-gamepad text-xs"></i> قيم جديد
+                        </button>
+                        
+                        <div class="relative flex items-center">
+                            <input id="join-room-code" type="text" placeholder="أدخل كود الغرفة (6 خانات)" class="w-full bg-slate-900 border border-indigo-950 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-indigo-400 text-slate-100 text-center tracking-widest font-bold pr-10">
+                            <i class="fas fa-key absolute right-3 text-indigo-400 text-xs"></i>
+                        </div>
+                        <button onclick="joinRoomBtn()" class="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-1.5 text-xs">
+                            <i class="fas fa-door-open"></i> انضم للغرفة
+                        </button>
+                    </div>
+                </div>
+
+                <!-- إحصائيات اللاعبين -->
+                <div class="space-y-1">
+                    <h3 class="font-extrabold text-[10px] text-slate-300 px-1 text-right"><i class="fas fa-chart-bar ml-1.5 text-indigo-400"></i>إحصاءاتك وإنجازاتك</h3>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <div class="bg-slate-900/40 border border-slate-900 p-1.5 rounded-xl text-center">
+                            <span class="text-[8px] text-slate-400 block">أفضل نقاط</span>
+                            <span id="stat-best-score" class="font-black text-indigo-400 text-xs">0</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-900 p-1.5 rounded-xl text-center">
+                            <span class="text-[8px] text-slate-400 block">الانتصارات</span>
+                            <span id="stat-wins" class="font-black text-amber-400 text-xs">0</span>
+                        </div>
+                        <div class="bg-slate-900/40 border border-slate-900 p-1.5 rounded-xl text-center">
+                            <span class="text-[8px] text-slate-400 block">نسبة النجاح</span>
+                            <span id="stat-success-rate" class="font-black text-emerald-400 text-xs">0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- شارات التميز المقفلة -->
+                <div class="space-y-1">
+                    <h3 class="font-extrabold text-[10px] text-slate-300 px-1 text-right"><i class="fas fa-award ml-1.5 text-amber-400"></i>شارات التميز</h3>
+                    <div class="bg-[#120c2b]/30 border border-indigo-950 rounded-xl p-1.5 grid grid-cols-4 gap-1.5" id="achievements-container">
+                        <!-- تُضاف برمجياً -->
+                    </div>
+                </div>
+
+                <!-- الترتيب وقائمة الأصدقاء -->
+                <div class="bg-[#120c2b]/40 border border-indigo-950 rounded-2xl overflow-hidden">
+                    <div class="flex border-b border-indigo-950/60 bg-slate-950/20">
+                        <button onclick="switchDashboardTab('leaderboard')" id="tab-leaderboard-btn" class="flex-1 py-1.5 text-center text-[9px] font-bold border-b-2 border-indigo-500 text-indigo-400">
+                            <i class="fas fa-trophy ml-1"></i> الترتيب العالمي
+                        </button>
+                        <button onclick="switchDashboardTab('friends')" id="tab-friends-btn" class="flex-1 py-1.5 text-center text-[9px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200">
+                            <i class="fas fa-users ml-1"></i> الأصدقاء (<span id="friends-count">0</span>)
+                        </button>
+                    </div>
+
+                    <div id="tab-leaderboard-content" class="p-1.5 space-y-1.5">
+                        <div id="global-leaderboard-list" class="space-y-1 max-h-28 overflow-y-auto pr-1">
+                            <!-- الترتيب واللاعبين -->
+                        </div>
+                    </div>
+
+                    <div id="tab-friends-content" class="p-1.5 space-y-1.5 hidden">
+                        <div class="flex gap-1.5">
+                            <input id="add-friend-name" type="text" placeholder="اسم الصديق" class="flex-1 bg-slate-950 border border-slate-900 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-indigo-500 text-slate-100 text-right">
+                            <button onclick="addFriendBtn()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1 rounded-lg text-[9px] font-bold flex items-center gap-1 shrink-0">
+                                <i class="fas fa-user-plus text-[8px]"></i> إضافة
+                            </button>
+                        </div>
+                        <div id="friends-list" class="space-y-1 max-h-24 overflow-y-auto pr-1">
+                            <!-- الأصدقاء -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة لوبي الانتظار ذات الحجم الثابت للـ 8 لاعبين والمحمية ضد التجاوز -->
+        <div id="screen-lobby" class="flex-1 flex flex-col hidden overflow-hidden h-full">
+            <!-- ترويسة اللوبي -->
+            <div class="pb-2 mb-2 border-b border-indigo-950 flex justify-between items-center shrink-0">
+                <button onclick="leaveRoom()" class="text-slate-400 hover:text-rose-400 flex items-center gap-1 text-[10px] font-bold">
+                    <i class="fas fa-arrow-right text-[9px]"></i> خروج
+                </button>
+                <div class="text-center">
+                    <span class="text-[8px] text-indigo-400 block font-bold tracking-widest">غرفة اللعب</span>
+                    <h3 id="lobby-room-code" class="text-xs font-black text-amber-400 select-all tracking-wider">------</h3>
+                </div>
+                <button onclick="openInviteDetailModal()" class="bg-indigo-950 border border-indigo-500/20 hover:bg-indigo-900 px-2 py-1 rounded-lg text-indigo-300 text-[9px] flex items-center gap-1 transition-all">
+                    <i class="fas fa-share-alt text-[8px]"></i> دعوة
+                </button>
+            </div>
+
+            <!-- محتوى انتظار الغرفة -->
+            <div class="flex-1 flex flex-col justify-between overflow-hidden">
+                <div class="space-y-2.5 flex-1 flex flex-col justify-start">
+                    <!-- تعليمات اللعبة المبسطة -->
+                    <div class="bg-indigo-950/20 border border-indigo-500/10 rounded-xl p-2 flex gap-1.5 items-center shrink-0">
+                        <i class="fas fa-info-circle text-xs text-indigo-400 shrink-0"></i>
+                        <p class="text-[9px] text-slate-300 leading-normal text-right">
+                            تبدأ اللعبة عندما يصبح الجميع في حالة استعداد <strong class="text-emerald-400">(يلا بينا)</strong>. السعة: <strong id="lobby-limit-info">2 إلى 8 لاعبين</strong>.
+                        </p>
+                    </div>
+
+                    <div class="flex justify-between items-center px-0.5 shrink-0">
+                        <h4 class="font-bold text-[10px] text-slate-200">اللاعبون المتصلون (<span id="lobby-players-count">0</span> / <span id="lobby-max-players">4</span>)</h4>
+                        <span id="lobby-host-indicator" class="text-[8px] text-slate-400 bg-slate-950/60 px-1.5 py-0.5 rounded-full">أنت مضيف الغرفة 👑</span>
+                    </div>
+
+                    <!-- قائمة المتصلين الكلية (عمود واحد فائق التناسق يتسع للـ 8 بشكل رائع دون الحاجة لشريط تمرير خارجي) -->
+                    <div id="lobby-players-list" class="flex flex-col gap-1 w-full max-h-[180px] overflow-y-auto">
+                        <!-- تظهر هنا كروت اللاعبين مضغوطة للغاية -->
+                    </div>
+                </div>
+
+                <!-- لوحة محاكاة البوتات للمضيف في حال عدم وجود لاعبين -->
+                <div id="lobby-bot-control-panel" class="bg-slate-950/30 border border-dashed border-indigo-500/15 rounded-xl p-2 text-center space-y-1 shrink-0 mt-2 hidden">
+                    <span class="text-[9px] text-indigo-400 font-bold block"><i class="fas fa-robot"></i> طور التجربة الفردية (إضافة بوتات)</span>
+                    <button onclick="addBotPlayer()" class="px-2.5 py-0.5 bg-indigo-950 border border-indigo-500/20 hover:bg-indigo-900 text-indigo-200 rounded-lg text-[9px] font-bold transition-all inline-flex items-center gap-1">
+                        <i class="fas fa-plus text-[8px]"></i> إضافة لاعب بوت 🤖
+                    </button>
+                </div>
+            </div>
+
+            <!-- أزرار البدء والجاهزية باللوبي -->
+            <div class="pt-2 border-t border-indigo-950/60 space-y-1 shrink-0 mt-2">
+                <div class="flex gap-1.5">
+                    <button id="lobby-ready-toggle" onclick="toggleReadyState()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md">
+                        <i class="fas fa-check-double text-[9px]"></i> <span id="lobby-ready-text">مستعد (يلا بينا)</span>
+                    </button>
+                </div>
+                <button id="lobby-start-game-btn" onclick="startHostGame()" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-extrabold py-2 rounded-xl text-xs opacity-50 cursor-not-allowed transition-all flex items-center justify-center gap-1.5 hidden">
+                    <i class="fas fa-play text-[9px]"></i> بدء لعبة يا برين ⚡
+                </button>
+            </div>
+        </div>
+
+        <!-- شاشة العداد التنازلي الحركي -->
+        <div id="screen-countdown" class="flex-1 flex flex-col justify-center items-center p-5 hidden h-full">
+            <div class="text-center space-y-4 animate__animated animate__zoomIn">
+                <div class="w-20 h-20 bg-slate-900/80 border-4 border-indigo-500 rounded-full flex items-center justify-center shadow-2xl pulsing-glow mx-auto">
+                    <span id="countdown-number" class="text-3xl font-black text-amber-400">5</span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-black text-indigo-300 animate__animated animate__flash animate__infinite">جهز مخك يا مركز!</h3>
+                    <p class="text-slate-400 text-[10px] mt-1.5">ستظهر الآن 10 صور متتالية لحفظها بدقة فائقة!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- شاشة عرض الفلاش المتتالي للرموز -->
+        <div id="screen-game-flash" class="flex-1 flex flex-col justify-between p-2 hidden h-full">
+            <div class="flex justify-between items-center bg-slate-950/40 p-2 rounded-xl border border-indigo-950 shrink-0">
+                <span class="text-[9px] text-slate-400 font-bold">الجولة: <span id="flash-round-num" class="text-indigo-400">1</span></span>
+                <span class="text-[9px] text-amber-400 font-extrabold animate-pulse">فلاش متسلسل ⚡</span>
+                <span class="text-[9px] text-slate-400 font-bold" id="flash-timer-display"><i class="fas fa-clock text-amber-500 ml-1"></i>0 / 10</span>
+            </div>
+
+            <div class="my-auto text-center space-y-4 relative">
+                <h4 class="text-xs font-bold text-slate-300">ركز! احفظ العناصر المتتالية:</h4>
+                
+                <div class="w-28 h-28 mx-auto relative perspective-1000">
+                    <div id="dynamic-flip-card" class="w-full h-full absolute flip-card-inner bg-gradient-to-br from-indigo-950 to-purple-950 border-2 border-indigo-500/40 rounded-2xl flex items-center justify-center text-5xl shadow-2xl shadow-indigo-500/10">
+                        <span id="flash-current-emoji" class="animate__animated animate__zoomIn">🧠</span>
+                    </div>
+                </div>
+
+                <div class="flex justify-center gap-1 max-w-[200px] mx-auto overflow-hidden px-1 animate__animated animate__fadeInUp" id="flash-steps-bullets">
+                    <!-- كرات الفلاش -->
+                </div>
+            </div>
+
+            <p class="text-center text-[9px] text-slate-500 shrink-0">ترتيب ظهور العناصر وصورها في غاية الأهمية للأجوبة التالية.</p>
+        </div>
+
+        <!-- شاشة تخمين الصور واختيار الإجابات السريعة -->
+        <div id="screen-game-answer" class="flex-1 flex flex-col justify-between p-2 hidden h-full">
+            <div class="flex justify-between items-center bg-slate-950/60 p-2 rounded-xl border border-indigo-950 shrink-0">
+                <span class="text-[9px] text-slate-400 font-bold">السؤال: <span id="answer-quest-num" class="text-amber-400 font-black">1/5</span></span>
+                <div class="bg-indigo-950 px-2 py-0.5 rounded border border-indigo-500/20 flex items-center gap-1">
+                    <i class="fas fa-star text-amber-400 text-[9px]"></i>
+                    <span id="answer-current-score" class="text-[9px] font-black text-indigo-200">0 نقطة</span>
+                </div>
+                <span class="text-[9px] text-slate-400 font-bold" id="answer-timer-display"><i class="fas fa-clock text-rose-500 ml-1"></i>10ث</span>
+            </div>
+
+            <div class="my-auto space-y-4">
+                <div class="text-center">
+                    <h3 class="text-xs sm:text-sm font-black text-slate-200">أي من الصور التالية ظهرت في لوحة الحفظ؟</h3>
+                    <p class="text-[9px] text-slate-400 mt-0.5">الخيار الخاطئ سيخصم من نقاطك!</p>
+                </div>
+
+                <div id="answer-options-grid" class="grid grid-cols-2 gap-2 max-w-[220px] mx-auto">
+                    <!-- تُدرج برمجياً -->
+                </div>
+
+                <div class="flex justify-center gap-1.5" id="answer-quest-bullets">
+                    <div class="w-2 h-2 rounded-full bg-slate-800"></div>
+                    <div class="w-2 h-2 rounded-full bg-slate-800"></div>
+                    <div class="w-2 h-2 rounded-full bg-slate-800"></div>
+                    <div class="w-2 h-2 rounded-full bg-slate-800"></div>
+                    <div class="w-2 h-2 rounded-full bg-slate-800"></div>
+                </div>
+            </div>
+
+            <div class="text-center pb-0.5 shrink-0">
+                <p class="text-[9px] text-slate-500">سيتم نقلك للسؤال التالي فور الاختيار أو عند نفاد الوقت.</p>
+            </div>
+        </div>
+
+        <!-- شاشة نهاية الجولة وإعلان الترتيب وطرد اللاعب الأقل -->
+        <div id="screen-round-end" class="flex-1 flex flex-col justify-between p-2 hidden overflow-hidden h-full">
+            <div class="text-center pt-0.5 shrink-0">
+                <span class="text-[8px] text-amber-400 font-black tracking-widest block uppercase">انتهت الجولة</span>
+                <h3 class="text-xs font-black text-slate-100">نتائج الترتيب الحالي 📊</h3>
+            </div>
+
+            <!-- صندوق التنبيه الاستبعادي الفكاهي -->
+            <div id="eliminated-box" class="bg-rose-950/20 border border-rose-500/20 rounded-xl p-2 text-center animate__animated animate__shakeX shrink-0 my-1">
+                <p id="eliminated-funny-text" class="text-[9px] sm:text-xs text-slate-300 leading-normal"></p>
+            </div>
+
+            <!-- قائمة الترتيب المصغرة والمحكمة للـ 8 لاعبين دون شريط تمرير خارجي -->
+            <div class="flex-1 flex flex-col justify-start gap-1 w-full my-1 overflow-hidden shrink-0">
+                <div id="round-rankings-list" class="flex flex-col gap-1 w-full max-h-[180px] overflow-y-auto">
+                    <!-- كروت اللاعبين (الصفوف نحيفة للغاية) -->
+                </div>
+            </div>
+
+            <!-- الزر الانتقالي (اللي بعدو) الثابت دائماً والظاهر في موقع ممتاز -->
+            <div class="space-y-1 shrink-0 pt-2 border-t border-indigo-950/40">
+                <p id="round-next-helper-text" class="text-center text-[8px] text-slate-500">يرجى من المضيف الضغط على الزر للانتقال للجولة التالية.</p>
+                <button id="round-next-btn" onclick="advanceToNextRound()" class="w-full bg-gradient-to-r from-amber-500 to-indigo-600 text-slate-950 font-black py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1 shadow-lg">
+                    <span>اللي بعدو</span> <i class="fas fa-arrow-left text-[9px]"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- شاشة فوز بطل الذاكرة النهائية -->
+        <div id="screen-game-over" class="flex-1 flex flex-col justify-between p-4 hidden animate__animated animate__fadeIn h-full">
+            <div class="text-center pt-3 space-y-1.5 shrink-0">
+                <div class="w-14 h-14 bg-gradient-to-tr from-amber-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto shadow-2xl animate__animated animate__bounceIn">
+                    <i class="fas fa-crown text-2xl text-slate-950"></i>
+                </div>
+                <h3 class="text-lg font-black text-amber-400">بطل الذاكرة الفولاذية! 🧠👑</h3>
+                <p class="text-slate-400 text-[9px]">لقد تغلب على الجميع واستحق لقب "برين الأول"</p>
+            </div>
+
+            <div class="bg-[#120c2b]/50 border border-amber-500/20 rounded-2xl p-4 text-center my-auto space-y-2">
+                <span id="winner-crown" class="text-3xl block">🥇</span>
+                <h2 id="winner-name" class="text-xs font-black text-white">لاعب برين</h2>
+                <div class="flex justify-center gap-2 text-[9px] pt-1">
+                    <div class="bg-slate-950/80 px-3 py-1.5 rounded-xl border border-indigo-950/50">
+                        <span class="text-slate-400 block text-[8px] mb-0.5">النقاط الكلية</span>
+                        <strong id="winner-total-points" class="text-amber-400 text-sm">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="returnToDashboard()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shrink-0">
+                <i class="fas fa-home"></i> العودة للقائمة الرئيسية
+            </button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendEmailVerification, signInAnonymously, onAuthStateChanged, updateProfile, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        let app, db, auth;
+        let isFirebaseActive = false;
+
+        // قاعدة الرموز والأشكال التعبيرية الكلية الكبيرة جداً لمنع التكرار
+        const emojiDatabase = [
+            "🦁", "🐯", "🐼", "🐨", "🦊", "🐰", "🐹", "🐱", "🐶", "🐸", "🐵", "🐔", "🐧", "🐦", "🦆", "🦅", "🦉", "⚡", "🔥", "🌈",
+            "👑", "🎒", "🕶️", "📱", "💻", "🖥️", "📷", "🎥", "🔍", "💡", "🔦", "📖", "✏️", "🔑", "🔒", "✉️", "📦", "🎁", "🎈", "🎈",
+            "🚗", "🚕", "🚙", "🚌", "🏎️", "🚓", "🚑", "🚒", "🚐", "🚚", "🚜", "🛵", "🏍️", "🚲", "🚂", "✈️", "🚀", "🛸", "🌍", "🍕",
+            "🍏", "🍎", "🍐", "🍊", "🍋", "🍌", "🍉", "🍇", "🍓", "🫐", "🍈", "🍒", "🍑", "🥭", "🍍", "🥥", "🥝", "🍅", "🍆", "🥑",
+            "🍦", "🍩", "🍪", "🍫", "🍬", "🍭", "🍯", "🎨", "🎬", "🎤", "🎧", "🎼", "🎹", "🥁", "🎷", "🎺", "🎸", "🎻", "🎮", "🎳"
+        ];
+
+        // Unique App ID for Firebase Rules Compliance
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'yabrain-challenge-app';
+
+        const state = {
+            currentUser: {
+                uid: 'local_player_' + Math.floor(Math.random()*100000),
+                displayName: 'زائر برين',
+                email: '',
+                emailVerified: false,
+                stats: {
+                    bestScore: 120,
+                    wins: 3,
+                    gamesCount: 8,
+                    successRate: 75,
+                    achievements: ['first_win', 'perfect_memory']
+                },
+                friends: []
+            },
+            currentRoomId: null,
+            roomData: null,
+            roomUnsubscribe: null,
+            timerInterval: null,
+            currentDashboardTab: 'leaderboard',
+            localAnswers: [], 
+            localScore: 0,
+            activeQuestionIndex: 0,
+            selectedMaxPlayers: 4, 
+            pendingInviteCode: null,
+            firebaseSettings: null,
+            currentAuthTab: 'guest', 
+            usedEmojisInGame: [] 
+        };
+
+        const screens = {
+            auth: document.getElementById('screen-auth'),
+            dashboard: document.getElementById('screen-dashboard'),
+            lobby: document.getElementById('screen-lobby'),
+            countdown: document.getElementById('screen-countdown'),
+            flash: document.getElementById('screen-game-flash'),
+            answer: document.getElementById('screen-game-answer'),
+            roundEnd: document.getElementById('screen-round-end'),
+            gameOver: document.getElementById('screen-game-over')
+        };
+
+        const sound = {
+            playCorrect() {
+                try {
+                    const synth = new Tone.Synth().toDestination();
+                    synth.triggerAttackRelease("E5", "8n");
+                } catch(e) {}
+            },
+            playWrong() {
+                try {
+                    const synth = new Tone.Synth().toDestination();
+                    synth.triggerAttackRelease("C3", "4n");
+                } catch(e) {}
+            },
+            playTimer() {
+                try {
+                    const synth = new Tone.Synth({oscillator: {type: 'sine'}}).toDestination();
+                    synth.triggerAttackRelease("A4", "16n", undefined, 0.2);
+                } catch(e) {}
+            },
+            playCelebration() {
+                try {
+                    const synth = new Tone.PolySynth().toDestination();
+                    synth.triggerAttackRelease(["C4", "E4", "G4", "C5"], "2n");
+                } catch(e) {}
+            }
+        };
+
+        window.switchAuthTab = function(tab) {
+            state.currentAuthTab = tab;
+            
+            const btnGuest = document.getElementById('tab-auth-guest');
+            const btnLogin = document.getElementById('tab-auth-login');
+            const btnRegister = document.getElementById('tab-auth-register');
+            
+            const fUsername = document.getElementById('auth-field-username');
+            const fEmail = document.getElementById('auth-field-email');
+            const fPassword = document.getElementById('auth-field-password');
+            const actionText = document.getElementById('auth-action-text');
+
+            [btnGuest, btnLogin, btnRegister].forEach(b => {
+                b.className = "flex-1 py-1 text-center text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all";
+            });
+
+            if (tab === 'guest') {
+                btnGuest.className = "flex-1 py-1 text-center text-xs font-bold border-b-2 border-indigo-500 text-indigo-400 transition-all";
+                fUsername.classList.remove('hidden');
+                fEmail.classList.add('hidden');
+                fPassword.classList.add('hidden');
+                actionText.innerText = "دخول سريع كضيف";
+            } else if (tab === 'login') {
+                btnLogin.className = "flex-1 py-1 text-center text-xs font-bold border-b-2 border-indigo-500 text-indigo-400 transition-all";
+                fUsername.classList.add('hidden');
+                fEmail.classList.remove('hidden');
+                fPassword.classList.remove('hidden');
+                actionText.innerText = "تسجيل الدخول";
+            } else if (tab === 'register') {
+                btnRegister.className = "flex-1 py-1 text-center text-xs font-bold border-b-2 border-indigo-500 text-indigo-400 transition-all";
+                fUsername.classList.remove('hidden');
+                fEmail.classList.remove('hidden');
+                fPassword.classList.remove('hidden');
+                actionText.innerText = "إنشاء حساب وتفعيل";
+            }
+        };
+
+        window.submitAuthAction = async function() {
+            // Trigger Audio Context activation on first user interaction
+            try { await Tone.start(); } catch(e){}
+
+            const username = document.getElementById('auth-input-username').value.trim();
+            const email = document.getElementById('auth-input-email').value.trim();
+            const password = document.getElementById('auth-input-password').value.trim();
+
+            if (state.currentAuthTab === 'guest') {
+                if (!username) {
+                    showCustomModal("خطأ إدخال", "الرجاء كتابة الاسم المستعار أولاً للدخول السريع!", "fa-exclamation-triangle");
+                    return;
+                }
+                state.currentUser.displayName = username;
+                state.currentUser.uid = 'local_' + Math.floor(Math.random() * 90000);
+                state.currentUser.emailVerified = true; 
+                completeSuccessLoginFlow();
+            } 
+            else if (state.currentAuthTab === 'register') {
+                if (!username || !email || !password) {
+                    showCustomModal("خطأ إدخال", "الرجاء تعبئة جميع الحقول (الاسم، البريد، وكلمة المرور)!", "fa-exclamation-triangle");
+                    return;
+                }
+                if (password.length < 6) {
+                    showCustomModal("كلمة مرور ضعيفة", "يجب أن تكون كلمة المرور مكونة من 6 خانات على الأقل!", "fa-shield-alt");
+                    return;
+                }
+
+                if (isFirebaseActive) {
+                    try {
+                        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+                        await updateProfile(userCred.user, { displayName: username });
+                        await sendEmailVerification(userCred.user);
+                        
+                        const userDocRef = doc(db, 'artifacts', appId, 'users', userCred.user.uid, 'profile');
+                        await setDoc(userDocRef, {
+                            uid: userCred.user.uid,
+                            displayName: username,
+                            stats: { bestScore: 0, wins: 0, gamesCount: 0, successRate: 0, achievements: [] },
+                            friends: []
+                        });
+
+                        document.getElementById('verification-target-email').innerText = email;
+                        document.getElementById('verification-modal').classList.remove('hidden');
+                        
+                    } catch(e) {
+                        showCustomModal("خطأ بالتسجيل", "البريد مستخدم بالفعل أو الإدخال غير صالح!", "fa-times-circle");
+                    }
+                } else {
+                    state.currentUser.displayName = username;
+                    state.currentUser.email = email;
+                    state.currentUser.uid = 'registered_' + Math.floor(Math.random() * 90000);
+                    state.currentUser.emailVerified = false;
+
+                    document.getElementById('verification-target-email').innerText = email;
+                    document.getElementById('verification-modal').classList.remove('hidden');
+                }
+            } 
+            else if (state.currentAuthTab === 'login') {
+                if (!email || !password) {
+                    showCustomModal("خطأ إدخال", "الرجاء كتابة البريد الإلكتروني وكلمة المرور!", "fa-exclamation-triangle");
+                    return;
+                }
+
+                if (isFirebaseActive) {
+                    try {
+                        const userCred = await signInWithEmailAndPassword(auth, email, password);
+                        if (!userCred.user.emailVerified) {
+                            showCustomModal("بريد غير مفعل", "يرجى مراجعة بريدك الإلكتروني وتفعيله قبل إتمام تسجيل الدخول!", "fa-envelope-open");
+                            return;
+                        }
+                        
+                        const userDocRef = doc(db, 'artifacts', appId, 'users', userCred.user.uid, 'profile');
+                        const userSnap = await getDoc(userDocRef);
+                        if (userSnap.exists()) {
+                            state.currentUser = userSnap.data();
+                        }
+                        completeSuccessLoginFlow();
+                    } catch(e) {
+                        showCustomModal("خطأ في الدخول", "البريد الإلكتروني أو كلمة المرور غير صحيحة!", "fa-lock");
+                    }
+                } else {
+                    state.currentUser.displayName = email.split('@')[0];
+                    state.currentUser.uid = 'mock_auth_' + Math.floor(Math.random()*9000);
+                    state.currentUser.emailVerified = true;
+                    completeSuccessLoginFlow();
+                }
+            }
+        };
+
+        window.confirmMockVerification = function() {
+            state.currentUser.emailVerified = true;
+            document.getElementById('verification-modal').classList.add('hidden');
+            showToast("تم تفعيل حسابك بنجاح! 🎉 أهلاً بك في تحدي برين.", "fa-check-circle");
+            completeSuccessLoginFlow();
+        };
+
+        window.closeVerificationModal = function() {
+            document.getElementById('verification-modal').classList.add('hidden');
+        };
+
+        async function completeSuccessLoginFlow() {
+            updateProfileHeader();
+            updateStatsAndAchievements();
+            await renderGlobalLeaderboard();
+            renderFriendsList();
+
+            if (state.pendingInviteCode) {
+                const codeToJoin = state.pendingInviteCode;
+                state.pendingInviteCode = null;
+                await joinRoom(codeToJoin);
+            } else {
+                showScreen('dashboard');
+                showToast(`مرحباً بك يا ${state.currentUser.displayName}! جاهز لتحدي الذاكرة؟ 🧠`, "fa-user-check");
+            }
+        }
+
+        async function initializeApplicationDatabase() {
+            const savedConfig = localStorage.getItem('yabrain_firebase_config');
+            if (savedConfig) {
+                try {
+                    const parsed = JSON.parse(savedConfig);
+                    app = initializeApp(parsed);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    
+                    // Auth Priority & RULE 3 implementation
+                    onAuthStateChanged(auth, async (user) => {
+                        if (!user) {
+                            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                                await signInWithCustomToken(auth, __initial_auth_token);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        }
+                    });
+
+                    isFirebaseActive = true;
+                    state.firebaseSettings = parsed;
+                    
+                    document.getElementById('connection-badge').innerText = "سيرفر متصل 🟢";
+                    document.getElementById('connection-badge').className = "text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 font-bold";
+                    document.getElementById('db-config-json').value = JSON.stringify(parsed, null, 2);
+                } catch(e) {
+                    localStorage.removeItem('yabrain_firebase_config');
+                }
+            }
+            
+            if (!isFirebaseActive) {
+                document.getElementById('connection-badge').innerText = "محاكاة محلية 🟡";
+                document.getElementById('connection-badge').className = "text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/20 font-bold";
+            }
+        }
+
+        window.onload = async function() {
+            await initializeApplicationDatabase();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const inviteCode = urlParams.get('invite') || urlParams.get('room');
+            if (inviteCode && inviteCode.length === 6) {
+                state.pendingInviteCode = inviteCode.toUpperCase();
+                document.getElementById('join-room-code').value = state.pendingInviteCode;
+                document.getElementById('auth-invite-notice').classList.remove('hidden');
+                showToast(`تم اكتشاف دعوة للغرفة: ${state.pendingInviteCode}!`, "fa-envelope-open-text");
+            }
+
+            showScreen('auth');
+            updateProfileHeader();
+            updateStatsAndAchievements();
+            renderGlobalLeaderboard();
+            renderFriendsList();
+        };
+
+        window.saveCustomDBConfig = function() {
+            const rawJson = document.getElementById('db-config-json').value.trim();
+            if (!rawJson) {
+                showCustomModal("خطأ", "الرجاء إدخال ملف JSON صحيح لإعدادات Firebase!", "fa-exclamation-triangle");
+                return;
+            }
+            try {
+                const parsed = JSON.parse(rawJson);
+                localStorage.setItem('yabrain_firebase_config', JSON.stringify(parsed));
+                showCustomModal("نجاح الربط 🎉", "تم حفظ وتفعيل خادم اللعب الجماعي بنجاح! سيتم إعادة تشغيل اللعبة لتطبيق التغييرات.", "fa-check-circle");
+                setTimeout(() => { window.location.reload(); }, 2000);
+            } catch(e) {
+                showCustomModal("خطأ في التحليل", "ملف الـ JSON غير صالح! يرجى نسخه بدقة.", "fa-times-circle");
+            }
+        };
+
+        window.resetToMockDB = function() {
+            localStorage.removeItem('yabrain_firebase_config');
+            showCustomModal("تم الحذف", "تم حذف إعدادات السيرفر المخصص والرجوع لطور المحاكاة الفردي.", "fa-trash");
+            setTimeout(() => { window.location.reload(); }, 1500);
+        };
+
+        window.logout = function() {
+            showScreen('auth');
+            state.currentUser.displayName = "زائر برين";
+            document.getElementById('auth-input-username').value = "";
+            document.getElementById('auth-invite-notice').classList.add('hidden');
+            state.pendingInviteCode = null;
+        };
+
+        window.setPlayerCount = function(count) {
+            state.selectedMaxPlayers = count;
+            const buttons = document.querySelectorAll('.player-count-btn');
+            buttons.forEach(btn => {
+                const val = parseInt(btn.getAttribute('data-value'));
+                if (val === count) {
+                    btn.className = "player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-indigo-600 border-indigo-400 text-white shadow-md scale-110";
+                } else {
+                    btn.className = "player-count-btn w-6.5 h-6.5 rounded-full text-[9px] font-bold border transition-all flex items-center justify-center bg-slate-900 border-slate-700 text-slate-300";
+                }
+            });
+            sound.playCorrect();
+        };
+
+        window.createRoom = async function() {
+            const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+            const hostId = state.currentUser.uid;
+            
+            const maxPlayersLimit = state.selectedMaxPlayers || 4;
+            const totalRoundsCount = Math.max(maxPlayersLimit, 5); 
+
+            state.usedEmojisInGame = [];
+
+            const initialRoomObj = {
+                roomId: roomCode,
+                hostId: hostId,
+                status: 'lobby',
+                round: 1,
+                maxPlayers: maxPlayersLimit,
+                totalRounds: totalRoundsCount,
+                flashCards: [],
+                currentQuestion: 0,
+                questions: [],
+                countdown: 5,
+                players: {
+                    [hostId]: {
+                        uid: hostId,
+                        name: state.currentUser.displayName,
+                        ready: true,
+                        score: 0,
+                        eliminated: false,
+                        answered: false,
+                        isBot: false
+                    }
+                }
+            };
+
+            if (isFirebaseActive) {
+                // RULE 1 Compliance
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+                await setDoc(roomDocRef, initialRoomObj);
+                subscribeToRoom(roomCode);
+            } else {
+                state.roomData = initialRoomObj;
+                state.currentRoomId = roomCode;
+                renderLobbyRoom();
+                showScreen('lobby');
+                showToast(`تم إنشاء الغرفة ${roomCode} محلياً!`, "fa-check");
+            }
+        };
+
+        window.joinRoomBtn = function() {
+            const codeInput = document.getElementById('join-room-code').value.trim().toUpperCase();
+            if (codeInput.length !== 6) {
+                showCustomModal("خطأ", "كود الغرفة يجب أن يتكون من 6 أحرف!", "fa-exclamation-triangle");
+                return;
+            }
+            joinRoom(codeInput);
+        };
+
+        async function joinRoom(roomCode) {
+            const playerId = state.currentUser.uid;
+            const cleanCode = roomCode.trim().toUpperCase();
+
+            if (isFirebaseActive) {
+                try {
+                    // RULE 1 Compliance
+                    const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', cleanCode);
+                    const roomSnap = await getDoc(roomDocRef);
+                    
+                    if (!roomSnap.exists()) {
+                        showCustomModal("غرفة غير موجودة", `الغرفة ${cleanCode} غير متوفرة!`, "fa-times-circle");
+                        return;
+                    }
+                    
+                    const room = roomSnap.data();
+                    if (room.status !== 'lobby') {
+                        showCustomModal("بدأت اللعبة", "عذراً، بدأت الجولات بالفعل في هذه الغرفة!", "fa-lock");
+                        return;
+                    }
+                    
+                    const playersCount = Object.keys(room.players || {}).length;
+                    if (playersCount >= room.maxPlayers) {
+                        showCustomModal("ممتلئة", `الغرفة بلغت الحد الأقصى المسموح به (${room.maxPlayers})!`, "fa-users-slash");
+                        return;
+                    }
+
+                    room.players[playerId] = {
+                        uid: playerId,
+                        name: state.currentUser.displayName,
+                        ready: false,
+                        score: 0,
+                        eliminated: false,
+                        answered: false,
+                        isBot: false
+                    };
+
+                    await setDoc(roomDocRef, room, { merge: true });
+                    subscribeToRoom(cleanCode);
+                } catch(e) {
+                    showCustomModal("خطأ اتصال", "فشل الانضمام للغرفة!", "fa-exclamation-circle");
+                }
+            } else {
+                if (state.roomData && state.currentRoomId === cleanCode) {
+                    const room = state.roomData;
+                    const id = 'player_' + Math.floor(Math.random()*1000);
+                    room.players[id] = {
+                        uid: id,
+                        name: "صديق_تجريبي",
+                        ready: false,
+                        score: 0,
+                        eliminated: false,
+                        answered: false,
+                        isBot: false
+                    };
+                    state.roomData = room;
+                    renderLobbyRoom();
+                    showScreen('lobby');
+                    showToast("تمت محاكاة انضمام صديق محلياً للتجربة!", "fa-user-plus");
+                } else {
+                    showCustomModal("طور المحاكاة", "في طور المحاكاة المحلية، يمكنك تجربة اللعبة بالضغط على زر (قيم جديد) ثم إضافة بوتات للتجربة!", "fa-info-circle");
+                }
+            }
+        }
+
+        window.leaveRoom = async function() {
+            if (state.roomUnsubscribe) state.roomUnsubscribe();
+            const playerId = state.currentUser.uid;
+            
+            if (isFirebaseActive && state.currentRoomId) {
+                try {
+                    // RULE 1 Compliance
+                    const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.currentRoomId);
+                    const roomSnap = await getDoc(roomDocRef);
+                    if (roomSnap.exists()) {
+                        const room = roomSnap.data();
+                        delete room.players[playerId];
+                        
+                        if (Object.keys(room.players).length === 0) {
+                            await deleteDoc(roomDocRef);
+                        } else {
+                            if (room.hostId === playerId) {
+                                room.hostId = Object.keys(room.players)[0];
+                            }
+                            await setDoc(roomDocRef, room);
+                        }
+                    }
+                } catch(e) {}
+            }
+
+            state.currentRoomId = null;
+            state.roomData = null;
+            showScreen('dashboard');
+            showToast("تم الخروج من الغرفة.", "fa-door-open");
+        };
+
+        window.openInviteDetailModal = function() {
+            document.getElementById('invite-detail-modal').classList.remove('hidden');
+        };
+
+        window.closeInviteDetailModal = function() {
+            document.getElementById('invite-detail-modal').classList.add('hidden');
+        };
+
+        window.copyInviteLinkOnly = function() {
+            if (!state.currentRoomId) return;
+            const baseUrl = window.location.href.split('?')[0];
+            const inviteUrl = `${baseUrl}?invite=${state.currentRoomId}`;
+
+            const tempInput = document.createElement("input");
+            tempInput.value = inviteUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+
+            showToast(`تم نسخ رابط الدعوة للغرفة ${state.currentRoomId}!`, "fa-copy");
+            closeInviteDetailModal();
+        };
+
+        window.addBotPlayer = async function() {
+            if (!state.currentRoomId || !state.roomData) return;
+            
+            const botNames = ["مفكر سريع 🤖", "ذاكرة فولاذية 🤖", "سبيستون برين 🤖", "عبقري الرموز 🤖", "مستكشف صنديد 🤖", "مخترع عظيم 🤖", "أرخميدس 🤖", "ابن سينا 🤖"];
+            const chosenName = botNames[Math.floor(Math.random() * botNames.length)];
+            const botId = 'bot_' + Math.floor(Math.random()*10000);
+
+            const updatedPlayers = { ...state.roomData.players };
+            const currentPlayersCount = Object.keys(updatedPlayers).length;
+            if (currentPlayersCount >= state.roomData.maxPlayers) {
+                showToast("بلغت الغرفة حد اللاعبين الأقصى المختار!", "fa-exclamation-triangle");
+                return;
+            }
+
+            updatedPlayers[botId] = {
+                uid: botId,
+                name: chosenName,
+                ready: true, 
+                score: 0,
+                eliminated: false,
+                answered: false,
+                isBot: true
+            };
+
+            await updateRoomState({
+                players: updatedPlayers
+            });
+
+            showToast(`انضم اللاعب الآلي ${chosenName}!`, "fa-robot");
+        };
+
+        function subscribeToRoom(roomCode) {
+            state.currentRoomId = roomCode;
+            // RULE 1 Compliance
+            const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', roomCode);
+            
+            // Error handling callback as required by Rule
+            state.roomUnsubscribe = onSnapshot(roomDocRef, (docSnap) => {
+                if (!docSnap.exists()) {
+                    showCustomModal("تم الإغلاق", "تم إغلاق الغرفة من قبل المضيف.", "fa-exclamation-triangle");
+                    leaveRoom();
+                    return;
+                }
+                const data = docSnap.data();
+                state.roomData = data;
+                handleRoomStateSync(data);
+            }, (error) => {
+                console.error("Firestore onSnapshot error:", error);
+            });
+        }
+
+        function handleRoomStateSync(room) {
+            const playerId = state.currentUser.uid;
+            
+            if (room.status === 'lobby') {
+                renderLobbyRoom();
+                showScreen('lobby');
+            } else if (room.status === 'countdown') {
+                showScreen('countdown');
+                updateCountdownScreen(room.countdown);
+            } else if (room.status === 'flash') {
+                showScreen('flash');
+                renderFlashGridSequence(room.flashCards, room.round);
+            } else if (room.status === 'answering') {
+                showScreen('answer');
+                renderQuestion(room.questions[room.currentQuestion], room.currentQuestion, room.timer);
+            } else if (room.status === 'round_end') {
+                showScreen('roundEnd');
+                renderRoundEndLeaderboard(room);
+            } else if (room.status === 'game_over') {
+                showScreen('gameOver');
+                renderGameOver(room);
+            }
+        }
+
+        function renderLobbyRoom() {
+            if (!state.roomData) return;
+            const myId = state.currentUser.uid;
+            const players = Object.values(state.roomData.players || {});
+            const maxCap = state.roomData.maxPlayers || 4;
+            
+            document.getElementById('lobby-room-code').innerText = state.roomData.roomId;
+            document.getElementById('lobby-players-count').innerText = players.length;
+            document.getElementById('lobby-max-players').innerText = maxCap;
+            document.getElementById('lobby-limit-info').innerText = `2 إلى ${maxCap} لاعبين`;
+            
+            const isHost = state.roomData.hostId === myId;
+            document.getElementById('lobby-host-indicator').style.display = isHost ? 'block' : 'none';
+            
+            const botPanel = document.getElementById('lobby-bot-control-panel');
+            if (isHost && players.length < maxCap) {
+                botPanel.classList.remove('hidden');
+            } else {
+                botPanel.classList.add('hidden');
+            }
+
+            const readyToggleBtn = document.getElementById('lobby-ready-toggle');
+            const readyText = document.getElementById('lobby-ready-text');
+            const me = state.roomData.players[myId];
+            
+            if (me && me.ready) {
+                readyToggleBtn.className = "flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md";
+                readyText.innerText = "جاهز (يلا بينا) ✅";
+            } else {
+                readyToggleBtn.className = "flex-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black py-2 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md";
+                readyText.innerText = "لحظة!! ⏰";
+            }
+
+            const container = document.getElementById('lobby-players-list');
+            container.innerHTML = '';
+            
+            // Ultra-compact single column player rows as requested
+            players.forEach(p => {
+                const isPlayerHost = p.uid === state.roomData.hostId;
+                const card = document.createElement('div');
+                card.className = "bg-slate-900/50 border border-indigo-950/40 rounded-lg py-1 px-3 flex justify-between items-center animate__animated animate__fadeInUp select-none w-full shrink-0";
+                card.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <div class="w-6 h-6 rounded-full bg-indigo-950/80 flex items-center justify-center text-indigo-400 font-bold border border-indigo-500/20 text-[10px] shrink-0">
+                            ${p.isBot ? '🤖' : p.name.charAt(0)}
+                        </div>
+                        <div class="min-w-0 flex-1 text-right">
+                            <span class="font-extrabold text-[11px] text-slate-200 truncate block">${p.name} ${isPlayerHost ? '👑' : ''}</span>
+                        </div>
+                    </div>
+                    <div class="shrink-0">
+                        ${p.ready 
+                            ? '<span class="text-[8px] bg-emerald-500/20 text-emerald-400 font-black px-1.5 py-0.5 rounded-full border border-emerald-500/20">يلا بينا!</span>' 
+                            : '<span class="text-[8px] bg-amber-500/20 text-amber-400 font-black px-1.5 py-0.5 rounded-full border border-amber-500/20">لحظة!!</span>'
+                        }
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            const startBtn = document.getElementById('lobby-start-game-btn');
+            if (isHost) {
+                startBtn.classList.remove('hidden');
+                const allReady = players.every(p => p.ready);
+                const hasMin = players.length >= 2;
+                
+                if (allReady && hasMin) {
+                    startBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    startBtn.disabled = false;
+                } else {
+                    startBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    startBtn.disabled = true;
+                }
+            } else {
+                startBtn.classList.add('hidden');
+            }
+        }
+
+        window.toggleReadyState = async function() {
+            const playerId = state.currentUser.uid;
+            if (!state.currentRoomId || !state.roomData) return;
+
+            const isReady = !state.roomData.players[playerId].ready;
+            
+            if (isFirebaseActive) {
+                // RULE 1 Compliance
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.currentRoomId);
+                await updateDoc(roomDocRef, {
+                    [`players.${playerId}.ready`]: isReady
+                });
+            } else {
+                state.roomData.players[playerId].ready = isReady;
+                renderLobbyRoom();
+            }
+            sound.playCorrect();
+        };
+
+        window.startHostGame = async function() {
+            if (!state.currentRoomId || !state.roomData) return;
+            const players = Object.values(state.roomData.players);
+            const roundsCount = Math.max(players.length, 5); 
+
+            await updateRoomState({
+                status: 'countdown',
+                countdown: 5,
+                totalRounds: roundsCount,
+                round: 1
+            });
+            runHostCountdown();
+        };
+
+        function runHostCountdown() {
+            let count = 5;
+            const timer = setInterval(async () => {
+                count--;
+                if (count <= 0) {
+                    clearInterval(timer);
+                    await setupNextGameRound(state.roomData.round);
+                } else {
+                    await updateRoomState({ countdown: count });
+                    sound.playTimer();
+                }
+            }, 1000);
+        }
+
+        async function setupNextGameRound(roundNum) {
+            let availableEmojis = emojiDatabase.filter(e => !state.usedEmojisInGame.includes(e));
+            
+            if (availableEmojis.length < 25) {
+                state.usedEmojisInGame = [];
+                availableEmojis = [...emojiDatabase];
+            }
+
+            const shuffled = availableEmojis.sort(() => 0.5 - Math.random());
+            const selectedFlash = shuffled.slice(0, 10);
+
+            selectedFlash.forEach(emoji => {
+                state.usedEmojisInGame.push(emoji);
+            });
+
+            const questionsList = [];
+            for (let i = 0; i < 5; i++) {
+                const correctEmoji = selectedFlash[Math.floor(Math.random() * 10)];
+                const nonSelected = emojiDatabase.filter(e => !selectedFlash.includes(e));
+                const distractors = nonSelected.sort(() => 0.5 - Math.random()).slice(0, 3);
+                const options = [correctEmoji, ...distractors].sort(() => 0.5 - Math.random());
+                
+                questionsList.push({
+                    correct: correctEmoji,
+                    options: options
+                });
+            }
+
+            const players = { ...state.roomData.players };
+            Object.keys(players).forEach(k => {
+                players[k].answered = false;
+            });
+
+            await updateRoomState({
+                status: 'flash',
+                flashCards: selectedFlash,
+                questions: questionsList,
+                currentQuestion: 0,
+                timer: 10,
+                players: players,
+                round: roundNum
+            });
+        }
+
+        function renderFlashGridSequence(cards, roundNum) {
+            document.getElementById('flash-round-num').innerText = roundNum;
+            const container = document.getElementById('flash-steps-bullets');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < 10; i++) {
+                const bullet = document.createElement('div');
+                bullet.className = "w-1.5 h-1.5 rounded-full bg-slate-800 transition-all border border-indigo-950 shrink-0";
+                container.appendChild(bullet);
+            }
+
+            let index = 0;
+            const totalItems = cards.length;
+            
+            const interval = setInterval(() => {
+                if (index < totalItems) {
+                    const currentEmoji = cards[index];
+                    const displayTimer = document.getElementById('flash-timer-display');
+                    displayTimer.innerHTML = `<i class="fas fa-eye text-amber-500 ml-1"></i>الصور: ${index + 1} / ${totalItems}`;
+
+                    const bullets = container.children;
+                    if (bullets[index]) {
+                        bullets[index].className = "w-2 h-1.5 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/50 transition-all shrink-0";
+                    }
+
+                    const card = document.getElementById('dynamic-flip-card');
+                    const emojiContainer = document.getElementById('flash-current-emoji');
+                    
+                    card.classList.add('flip-card-active');
+                    
+                    setTimeout(() => {
+                        emojiContainer.innerText = currentEmoji;
+                        card.classList.remove('flip-card-active');
+                        sound.playTimer();
+                    }, 150);
+
+                    index++;
+                } else {
+                    clearInterval(interval);
+                    const isHost = state.roomData.hostId === state.currentUser.uid;
+                    if (isHost) {
+                        setTimeout(async () => {
+                            await updateRoomState({
+                                status: 'answering',
+                                currentQuestion: 0,
+                                timer: 10
+                            });
+                            runQuestionsCycle();
+                        }, 1200);
+                    }
+                }
+            }, 1000); 
+        }
+
+        function runQuestionsCycle() {
+            let count = 10;
+            if (state.timerInterval) clearInterval(state.timerInterval);
+
+            simulateBotsAnsweringChoices();
+
+            state.timerInterval = setInterval(async () => {
+                count--;
+                const timerDisp = document.getElementById('answer-timer-display');
+                if (timerDisp) {
+                    timerDisp.innerHTML = `<i class="fas fa-clock text-rose-500 ml-1"></i>${count}ث`;
+                }
+                if (count <= 3) sound.playTimer();
+
+                const freshRoomSnap = isFirebaseActive 
+                    ? await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.currentRoomId))
+                    : { data: () => state.roomData, exists: () => true };
+
+                if (freshRoomSnap.exists()) {
+                    const room = freshRoomSnap.data();
+                    const activePlayers = Object.values(room.players).filter(p => !p.eliminated);
+                    const allAnswered = activePlayers.every(p => p.answered);
+
+                    if (count <= 0 || allAnswered) {
+                        clearInterval(state.timerInterval);
+                        const nextQ = room.currentQuestion + 1;
+                        
+                        if (nextQ < 5) {
+                            const updatedPlayers = { ...room.players };
+                            Object.keys(updatedPlayers).forEach(k => {
+                                updatedPlayers[k].answered = false;
+                            });
+
+                            await updateRoomState({
+                                currentQuestion: nextQ,
+                                timer: 10,
+                                players: updatedPlayers
+                            });
+                            runQuestionsCycle();
+                        } else {
+                            await computeRoundEliminations(room);
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function simulateBotsAnsweringChoices() {
+            const players = Object.values(state.roomData.players);
+            const activeBots = players.filter(p => p.isBot && !p.eliminated && !p.answered);
+            
+            if (activeBots.length === 0) return;
+
+            activeBots.forEach(bot => {
+                const delay = Math.random() * 4000 + 1000;
+                setTimeout(async () => {
+                    if (state.roomData && state.roomData.status === 'answering') {
+                        const correctRate = 0.70; 
+                        const isCorrect = Math.random() < correctRate;
+                        const scoreDiff = isCorrect ? 10 : -5;
+
+                        const updatedPlayers = { ...state.roomData.players };
+                        if (updatedPlayers[bot.uid]) {
+                            updatedPlayers[bot.uid].answered = true;
+                            let currentScore = updatedPlayers[bot.uid].score + scoreDiff;
+                            updatedPlayers[bot.uid].score = Math.max(0, currentScore);
+                            
+                            await updateRoomState({
+                                players: updatedPlayers
+                            });
+                        }
+                    }
+                }, delay);
+            });
+        }
+
+        async function computeRoundEliminations(room) {
+            const players = Object.values(room.players);
+            const survivors = players.filter(p => !p.eliminated);
+            
+            survivors.sort((a,b) => a.score - b.score);
+            
+            let excludedPlayerName = "لا أحد";
+            if (survivors.length > 1) {
+                const loser = survivors[0];
+                room.players[loser.uid].eliminated = true;
+                excludedPlayerName = loser.name;
+            }
+
+            const remainingActive = Object.values(room.players).filter(p => !p.eliminated);
+            const isGameOver = remainingActive.length <= 1 || room.round >= room.totalRounds;
+            const nextStatus = isGameOver ? 'game_over' : 'round_end';
+
+            await updateRoomState({
+                status: nextStatus,
+                players: room.players,
+                eliminatedUser: excludedPlayerName
+            });
+        }
+
+        function updateCountdownScreen(num) {
+            document.getElementById('countdown-number').innerText = num;
+        }
+
+        function renderQuestion(q, qIndex, timerCount) {
+            document.getElementById('answer-quest-num').innerText = `${qIndex + 1}/5`;
+            document.getElementById('answer-current-score').innerText = `${state.localScore} نقطة`;
+
+            const grid = document.getElementById('answer-options-grid');
+            grid.innerHTML = '';
+
+            const playerId = state.currentUser.uid;
+            const hasChosen = state.roomData.players[playerId].answered;
+
+            q.options.forEach(emoji => {
+                const btn = document.createElement('button');
+                // Added touch-manipulation for absolute zero click delay response
+                btn.className = "aspect-square rounded-2xl bg-indigo-950/20 border-2 border-indigo-500/10 hover:border-indigo-500 text-3xl flex items-center justify-center transition-all shadow-md active:scale-95 duration-100 touch-manipulation";
+                btn.innerText = emoji;
+                
+                if (hasChosen) {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-40', 'cursor-not-allowed');
+                } else {
+                    btn.onclick = () => {
+                        const allBtns = grid.querySelectorAll('button');
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            if (b !== btn) {
+                                b.classList.add('opacity-30');
+                            }
+                        });
+
+                        const isCorrect = emoji === q.correct;
+                        if (isCorrect) {
+                            btn.classList.remove('border-indigo-500/10', 'hover:border-indigo-500');
+                            btn.classList.add('border-emerald-500', 'bg-emerald-950/60', 'scale-105');
+                        } else {
+                            btn.classList.remove('border-indigo-500/10', 'hover:border-indigo-500');
+                            btn.classList.add('border-rose-500', 'bg-rose-950/60');
+                        }
+
+                        submitMyAnswer(emoji, q.correct);
+                    };
+                }
+                grid.appendChild(btn);
+            });
+
+            const bullets = document.getElementById('answer-quest-bullets').children;
+            for(let i=0; i<5; i++) {
+                if (i < qIndex) {
+                    bullets[i].className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
+                } else if (i === qIndex) {
+                    bullets[i].className = "w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse";
+                } else {
+                    bullets[i].className = "w-1.5 h-1.5 rounded-full bg-slate-800";
+                }
+            }
+        }
+
+        async function submitMyAnswer(selected, correct) {
+            const playerId = state.currentUser.uid;
+            const isCorrect = selected === correct;
+            const ptDiff = isCorrect ? 10 : -5;
+            
+            state.localScore = Math.max(0, state.localScore + ptDiff);
+
+            if (isCorrect) {
+                sound.playCorrect();
+                showToast("إجابة صحيحة! مميز ✨ (+10)", "fa-star");
+            } else {
+                sound.playWrong();
+                showToast("للأسف خاطئة! ركز (-5)", "fa-times-circle");
+            }
+
+            if (isFirebaseActive && state.currentRoomId) {
+                // RULE 1 Compliance
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.currentRoomId);
+                const currentScore = state.roomData.players[playerId].score + ptDiff;
+                await updateDoc(roomDocRef, {
+                    [`players.${playerId}.answered`]: true,
+                    [`players.${playerId}.score`]: Math.max(0, currentScore)
+                });
+            } else {
+                state.roomData.players[playerId].answered = true;
+                state.roomData.players[playerId].score = Math.max(0, state.roomData.players[playerId].score + ptDiff);
+                renderQuestion(state.roomData.questions[state.roomData.currentQuestion], state.roomData.currentQuestion, 10);
+            }
+        }
+
+        function renderRoundEndLeaderboard(room) {
+            const list = document.getElementById('round-rankings-list');
+            list.innerHTML = '';
+
+            const players = Object.values(room.players).sort((a,b) => b.score - a.score);
+            
+            // Fixed compact single column rows
+            players.forEach((p, idx) => {
+                const card = document.createElement('div');
+                card.className = `flex justify-between items-center p-1.5 rounded-lg border transition-all w-full shrink-0 ${p.eliminated ? 'bg-rose-950/10 border-rose-500/10 opacity-45' : 'bg-slate-900/90 border-slate-800/80 shadow-sm'}`;
+                
+                let icon = `<span class="font-bold text-[9px] text-slate-400">#${idx+1}</span>`;
+                if (idx === 0 && !p.eliminated) icon = "👑";
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-1.5 overflow-hidden w-full">
+                        <span class="w-4 text-center shrink-0">${icon}</span>
+                        <div class="w-5 h-5 rounded-full bg-slate-950 flex items-center justify-center text-[9px] text-indigo-400 font-bold shrink-0">
+                            ${p.isBot ? '🤖' : p.name.charAt(0)}
+                        </div>
+                        <div class="min-w-0 flex-1 flex justify-between items-center pl-2">
+                            <p class="font-bold text-[11px] truncate ${p.eliminated ? 'line-through text-rose-300' : 'text-slate-200'} text-right">${p.name}</p>
+                            <span class="text-[9px] font-black text-amber-400 flex items-center gap-0.5"><i class="fas fa-star text-[8px]"></i> ${p.score}</span>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+
+            const excludedUser = room.eliminatedUser || "لا أحد";
+            const punchlines = [
+                `اتعلم وتعال يا بطل! 😂👋`,
+                `محاولة جيدة، لكن الذاكرة تحتاج غسيل! 🧠🧼`,
+                `وداعاً يا بطل.. التركيز كان تحت الصفر! 📉`
+            ];
+            const joke = punchlines[Math.floor(Math.random() * punchlines.length)];
+            document.getElementById('eliminated-funny-text').innerHTML = `<strong>${excludedUser}</strong> ${joke}`;
+
+            const nextBtn = document.getElementById('round-next-btn');
+            const helperText = document.getElementById('round-next-helper-text');
+            const myId = state.currentUser.uid;
+            
+            const isHost = (room.hostId === myId) || !isFirebaseActive;
+            
+            if (isHost) {
+                nextBtn.style.display = 'flex';
+                helperText.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'none';
+                helperText.style.display = 'none';
+            }
+        }
+
+        window.advanceToNextRound = async function() {
+            if (!state.currentRoomId || !state.roomData) return;
+            const nextRound = state.roomData.round + 1;
+            await setupNextGameRound(nextRound);
+        };
+
+        async function renderGameOver(room) {
+            const players = Object.values(room.players);
+            const survivors = players.filter(p => !p.eliminated);
+            let champ = survivors[0] || players.sort((a,b) => b.score - a.score)[0];
+
+            if (champ) {
+                document.getElementById('winner-name').innerText = champ.name;
+                document.getElementById('winner-total-points').innerText = champ.score;
+
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+                sound.playCelebration();
+
+                const myId = state.currentUser.uid;
+                if (champ.uid === myId) {
+                    await handleStatsReward(champ.score);
+                }
+            }
+        }
+
+        async function handleStatsReward(score) {
+            if (!isFirebaseActive || !auth.currentUser) return;
+            try {
+                // RULE 1 Compliance
+                const userDocRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile');
+                const userSnap = await getDoc(userDocRef);
+                
+                if (userSnap.exists()) {
+                    const data = userSnap.data();
+                    const updatedStats = {
+                        bestScore: Math.max(data.stats.bestScore || 0, score),
+                        wins: (data.stats.wins || 0) + 1,
+                        gamesCount: (data.stats.gamesCount || 0) + 1,
+                        successRate: Math.min(100, Math.floor(((data.stats.wins + 1) / (data.stats.gamesCount + 1)) * 100)),
+                        achievements: data.stats.achievements || []
+                    };
+
+                    if (updatedStats.wins >= 1 && !updatedStats.achievements.includes('first_win')) {
+                        updatedStats.achievements.push('first_win');
+                    }
+                    if (updatedStats.wins >= 5 && !updatedStats.achievements.includes('elite_brain')) {
+                        updatedStats.achievements.push('elite_brain');
+                    }
+                    if (score >= 150 && !updatedStats.achievements.includes('perfect_memory')) {
+                        updatedStats.achievements.push('perfect_memory');
+                    }
+
+                    await updateDoc(userDocRef, {
+                        stats: updatedStats
+                    });
+
+                    state.currentUser.stats = updatedStats;
+                    updateStatsAndAchievements();
+                }
+            } catch(e) {}
+        }
+
+        window.returnToDashboard = async function() {
+            if (state.currentRoomId) {
+                await leaveRoom();
+            }
+            showScreen('dashboard');
+        };
+
+        function updateProfileHeader() {
+            document.getElementById('user-display-name').innerText = state.currentUser.displayName;
+            document.getElementById('user-avatar-lbl').innerText = state.currentUser.displayName.charAt(0);
+        }
+
+        function updateStatsAndAchievements() {
+            const stats = state.currentUser.stats || { bestScore: 0, wins: 0, gamesCount: 0, successRate: 0, achievements: [] };
+            
+            document.getElementById('stat-best-score').innerText = stats.bestScore;
+            document.getElementById('stat-wins').innerText = stats.wins;
+            document.getElementById('stat-success-rate').innerText = `${stats.successRate}%`;
+
+            const levelLbl = document.getElementById('user-badge-level');
+            if (stats.wins >= 5) {
+                levelLbl.innerHTML = '<i class="fas fa-medal text-yellow-400"></i> خبير برين الفولاذي 👑';
+            } else if (stats.wins >= 1) {
+                levelLbl.innerHTML = '<i class="fas fa-medal text-indigo-400"></i> متمرس برين ⚡';
+            } else {
+                levelLbl.innerHTML = '<i class="fas fa-medal text-slate-500"></i> مبتدئ برين';
+            }
+
+            const container = document.getElementById('achievements-container');
+            container.innerHTML = '';
+
+            const badgeSchema = [
+                { id: 'first_win', name: 'أول انتصار', icon: 'fa-trophy', color: 'text-amber-400', desc: 'أول مرتبة أولى' },
+                { id: 'elite_brain', name: '5 انتصارات', icon: 'fa-crown', color: 'text-yellow-400', desc: 'حصلت على 5 فوز' },
+                { id: 'perfect_memory', name: 'ذاكرة مثالية', icon: 'fa-brain', color: 'text-indigo-400', desc: 'نقاط فوق 150' },
+                { id: 'social_friend', name: 'الاجتماعي', icon: 'fa-user-friends', color: 'text-emerald-400', desc: 'أضفت صديقك الأول' }
+            ];
+
+            badgeSchema.forEach(badge => {
+                const unlocked = stats.achievements && stats.achievements.includes(badge.id);
+                const card = document.createElement('div');
+                card.className = `p-1.5 rounded-xl text-center border flex flex-col items-center ${unlocked ? 'bg-indigo-950/40 border-indigo-500/20' : 'bg-slate-900/10 border-slate-900 opacity-40'}`;
+                card.innerHTML = `
+                    <i class="fas ${badge.icon} text-xs ${unlocked ? badge.color : 'text-slate-500'} mb-0.5"></i>
+                    <span class="text-[8px] font-bold block text-slate-200">${badge.name}</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.switchDashboardTab = function(tabName) {
+            state.currentDashboardTab = tabName;
+            const lbBtn = document.getElementById('tab-leaderboard-btn');
+            const frBtn = document.getElementById('tab-friends-btn');
+            const lbContent = document.getElementById('tab-leaderboard-content');
+            const frContent = document.getElementById('tab-friends-content');
+
+            if (tabName === 'leaderboard') {
+                lbBtn.className = "flex-1 py-1.5 text-center text-[9px] font-bold border-b-2 border-indigo-500 text-indigo-400";
+                frBtn.className = "flex-1 py-1.5 text-center text-[9px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200";
+                lbContent.classList.remove('hidden');
+                frContent.classList.add('hidden');
+                renderGlobalLeaderboard();
+            } else {
+                frBtn.className = "flex-1 py-1.5 text-center text-[9px] font-bold border-b-2 border-indigo-500 text-indigo-400";
+                lbBtn.className = "flex-1 py-1.5 text-center text-[9px] font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200";
+                frContent.classList.remove('hidden');
+                lbContent.classList.add('hidden');
+                renderFriendsList();
+            }
+        };
+
+        async function renderGlobalLeaderboard() {
+            const list = document.getElementById('global-leaderboard-list');
+            list.innerHTML = '';
+
+            if (!isFirebaseActive) {
+                const dummies = [
+                    { displayName: "أسامة البروفسور 👑", stats: { bestScore: 240, wins: 12 } },
+                    { displayName: "سارة الذاكرة ✨", stats: { bestScore: 190, wins: 7 } },
+                    { displayName: "مخ الحديد 💪", stats: { bestScore: 150, wins: 5 } }
+                ];
+                renderLeaderboardUI(dummies);
+                return;
+            }
+
+            try {
+                // RULE 2 - Fetch all with simple query and order in memory
+                const q = query(collection(db, 'artifacts', appId, 'users'));
+                const querySnap = await getDocs(q);
+                const leaders = [];
+                
+                querySnap.forEach(snap => {
+                    leaders.push(snap.data());
+                });
+
+                leaders.sort((a,b) => {
+                    const winsDiff = (b.stats?.wins || 0) - (a.stats?.wins || 0);
+                    if (winsDiff !== 0) return winsDiff;
+                    return (b.stats?.bestScore || 0) - (a.stats?.bestScore || 0);
+                });
+
+                renderLeaderboardUI(leaders.slice(0, 10));
+            } catch(e) {}
+        }
+
+        function renderLeaderboardUI(users) {
+            const list = document.getElementById('global-leaderboard-list');
+            list.innerHTML = '';
+            
+            users.forEach((usr, idx) => {
+                const card = document.createElement('div');
+                card.className = "flex justify-between items-center bg-slate-950/40 p-2 rounded-lg text-[11px] border border-slate-950";
+                card.innerHTML = `
+                    <div class="flex items-center gap-1.5">
+                        <span class="w-4 text-center font-bold text-slate-500 text-[9px]">${idx+1}</span>
+                        <div class="w-5 h-5 rounded-full bg-indigo-950 flex items-center justify-center text-[8px] text-indigo-300 font-bold">
+                            ${usr.displayName ? usr.displayName.charAt(0) : 'ب'}
+                        </div>
+                        <span class="font-bold text-slate-200 truncate max-w-[80px]">${usr.displayName || 'لاعب مجهول'}</span>
+                    </div>
+                    <div class="text-[9px] text-slate-300">
+                        <span class="font-bold text-indigo-400 ml-1.5">${usr.stats?.bestScore || 0} نقطة</span>
+                        <span class="bg-amber-500/20 text-amber-400 px-1 py-0.5 rounded text-[8px] font-bold">${usr.stats?.wins || 0} فوز</span>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function renderFriendsList() {
+            const list = document.getElementById('friends-list');
+            list.innerHTML = '';
+            const friends = state.currentUser.friends || [];
+            document.getElementById('friends-count').innerText = friends.length;
+
+            if (friends.length === 0) {
+                list.innerHTML = `<p class="text-center text-[9px] text-slate-500 py-4">لم تضف أي صديق بعد.</p>`;
+                return;
+            }
+
+            friends.forEach(fr => {
+                const card = document.createElement('div');
+                card.className = "flex justify-between items-center bg-slate-950/20 p-1.5 rounded-lg border border-slate-950 text-[11px]";
+                card.innerHTML = `
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                        <span class="font-bold text-slate-200">${fr.name}</span>
+                    </div>
+                    <button onclick="inviteFriendDirectly('${fr.name}')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2 py-0.5 rounded text-[9px] font-bold">
+                        <i class="fas fa-paper-plane text-[8px]"></i> دعوة
+                    </button>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        window.addFriendBtn = async function() {
+            const name = document.getElementById('add-friend-name').value.trim();
+            if (!name) return;
+
+            const friends = state.currentUser.friends || [];
+            if (friends.some(f => f.name === name)) {
+                showToast("هذا الصديق مضاف بالفعل!", "fa-exclamation");
+                return;
+            }
+
+            friends.push({ name: name, addedAt: new Date().toISOString() });
+            state.currentUser.friends = friends;
+
+            if (!state.currentUser.stats.achievements.includes('social_friend')) {
+                state.currentUser.stats.achievements.push('social_friend');
+            }
+
+            if (isFirebaseActive && auth.currentUser) {
+                // RULE 1 Compliance
+                const userDocRef = doc(db, 'artifacts', appId, 'users', auth.currentUser.uid, 'profile');
+                await updateDoc(userDocRef, {
+                    friends: friends,
+                    'stats.achievements': state.currentUser.stats.achievements
+                });
+            }
+
+            document.getElementById('add-friend-name').value = '';
+            updateStatsAndAchievements();
+            renderFriendsList();
+            showToast(`تمت إضافة ${name} للقائمة! 🥳`, "fa-user-plus");
+        };
+
+        window.inviteFriendDirectly = function(friendName) {
+            if (state.currentRoomId) {
+                showToast(`تم إرسال دعوة الغرفة ${state.currentRoomId} إلى ${friendName}!`, "fa-paper-plane");
+            } else {
+                showCustomModal("تنبيه", "يجب عليك إنشاء غرفة أولاً لتتمكن من دعوة صديقك إليها!", "fa-exclamation-triangle");
+            }
+        };
+
+        async function updateRoomState(dataObj) {
+            if (isFirebaseActive && state.currentRoomId) {
+                // RULE 1 Compliance
+                const roomDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', state.currentRoomId);
+                await updateDoc(roomDocRef, dataObj);
+            } else {
+                state.roomData = { ...state.roomData, ...dataObj };
+                handleRoomStateSync(state.roomData);
+            }
+        }
+
+        window.openSettingsModal = function() {
+            document.getElementById('settings-modal').classList.remove('hidden');
+        };
+
+        window.closeSettingsModal = function() {
+            document.getElementById('settings-modal').classList.add('hidden');
+        };
+
+        window.showToast = function(message, iconName = "fa-info-circle") {
+            const toast = document.getElementById('toast-notification');
+            const icon = document.getElementById('toast-icon');
+            const text = document.getElementById('toast-text');
+
+            icon.className = `fas ${iconName}`;
+            text.innerText = message;
+            
+            toast.classList.remove('-translate-y-32');
+            toast.classList.add('translate-y-0');
+
+            setTimeout(() => { hideToast(); }, 3500);
+        };
+
+        window.hideToast = function() {
+            const toast = document.getElementById('toast-notification');
+            toast.classList.remove('translate-y-0');
+            toast.classList.add('-translate-y-32');
+        };
+
+        window.showCustomModal = function(title, description, icon = "fa-info-circle") {
+            const modal = document.getElementById('custom-modal');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = description;
+            
+            const modalIcon = document.getElementById('modal-icon');
+            modalIcon.className = `fas ${icon} text-xl text-amber-400`;
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('custom-modal').classList.add('hidden');
+        };
+
+        function showScreen(screenId) {
+            Object.keys(screens).forEach(key => {
+                if (key === screenId) {
+                    screens[key].classList.remove('hidden');
+                } else {
+                    screens[key].classList.add('hidden');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
